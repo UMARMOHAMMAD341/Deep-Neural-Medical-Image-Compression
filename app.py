@@ -101,13 +101,13 @@ if st.button("📂 Show History"):
         st.warning("No records found")
     else:
         for row in data:
-    st.markdown("------")
-    st.write(f"🆔 ID: {row[0]}")
-    st.write(f"📁 File Name: {row[1]}")
-    st.write(f"📊 Result: {row[2]}")
-    st.write(f"🎯 Confidence: {row[3]:.2f}")
-    st.write(f"⏰ Time: {row[4]}")
-    st.write(f"👤 User: {row[5]}")
+        st.markdown("------")
+        st.write(f"🆔 ID: {row[0]}")
+        st.write(f"📁 File Name: {row[1]}")
+        st.write(f"📊 Result: {row[2]}")
+        st.write(f"🎯 Confidence: {row[3]:.2f}")
+        st.write(f"⏰ Time: {row[4]}")
+        st.write(f"👤 User: {row[5]}")
 
 # -------------------------------
 # 🔓 LOGOUT

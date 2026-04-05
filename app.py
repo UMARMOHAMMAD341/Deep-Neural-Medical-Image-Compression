@@ -4,19 +4,49 @@ import numpy as np
 import tensorflow as tf
 from db import save_result, get_results
 
-# Page config
+# ✅ MUST BE FIRST STREAMLIT COMMAND
 st.set_page_config(page_title="Lung Cancer Detection", layout="centered")
 
-# Title
+# -------------------------------
+# 🔐 LOGIN SYSTEM
+# -------------------------------
+if "logged_in" not in st.session_state:
+    st.session_state.logged_in = False
+
+users = {
+    "umar": "1234",
+    "admin": "admin"
+}
+
+if not st.session_state.logged_in:
+    st.title("🔐 Login Page")
+
+    username = st.text_input("Username")
+    password = st.text_input("Password", type="password")
+
+    if st.button("Login"):
+        if username in users and users[username] == password:
+            st.session_state.logged_in = True
+            st.session_state.username = username
+            st.success("Login successful ✅")
+            st.rerun()
+        else:
+            st.error("Invalid credentials ❌")
+
+    st.stop()
+
+# -------------------------------
+# MAIN APP
+# -------------------------------
 st.title("🫁 Lung Cancer Detection System")
+st.write(f"👤 Logged in as: {st.session_state.username}")
 st.write("Upload a CT scan image to detect lung cancer.")
 
-# Load model safely
+# Load model
 @st.cache_resource
 def load_model():
     try:
-        model = tf.keras.models.load_model("model.h5")
-        return model
+        return tf.keras.models.load_model("model.h5")
     except Exception as e:
         st.error(f"❌ Error loading model: {e}")
         return None
@@ -32,18 +62,15 @@ if file is not None:
 
     if st.button("🔍 Predict"):
         if model is None:
-            st.error("Model not loaded. Check model.h5 file.")
+            st.error("Model not loaded.")
         else:
             try:
-                # Preprocessing
                 img = image.resize((224, 224))
                 img = np.array(img) / 255.0
                 img = np.expand_dims(img, axis=0)
 
-                # Prediction
                 prediction = model.predict(img)[0][0]
 
-                # Result
                 if prediction > 0.5:
                     result = "⚠️ Malignant (Cancer Detected)"
                     confidence = prediction
@@ -51,35 +78,40 @@ if file is not None:
                     result = "✅ Benign (No Cancer)"
                     confidence = 1 - prediction
 
-                # Display result
                 st.subheader("🧾 Result")
                 st.success(result)
                 st.write(f"Confidence: {confidence:.2f}")
 
-                # Save to database
-                save_result(file.name, result, confidence)
+                save_result(st.session_state.username, file.name, result, confidence)
                 st.info("💾 Result saved to database")
 
             except Exception as e:
                 st.error(f"❌ Prediction Error: {e}")
 
 # -------------------------------
-# 📊 SHOW HISTORY FROM DATABASE
+# 📊 HISTORY
 # -------------------------------
-
 st.markdown("---")
 st.subheader("📊 Previous Predictions")
 
 if st.button("📂 Show History"):
-    data = get_results()
+    data = get_results(st.session_state.username)
 
     if not data:
-        st.warning("No records found in database")
+        st.warning("No records found")
     else:
         for row in data:
-            st.markdown("------")
-            st.write(f"🆔 ID: {row[0]}")
-            st.write(f"📁 File Name: {row[1]}")
-            st.write(f"📊 Result: {row[2]}")
-            st.write(f"🎯 Confidence: {row[3]:.2f}")
-            st.write(f"⏰ Time: {row[4]}")
+    st.markdown("------")
+    st.write(f"🆔 ID: {row[0]}")
+    st.write(f"📁 File Name: {row[1]}")
+    st.write(f"📊 Result: {row[2]}")
+    st.write(f"🎯 Confidence: {row[3]:.2f}")
+    st.write(f"⏰ Time: {row[4]}")
+    st.write(f"👤 User: {row[5]}")
+
+# -------------------------------
+# 🔓 LOGOUT
+# -------------------------------
+if st.button("Logout"):
+    st.session_state.logged_in = False
+    st.rerun()

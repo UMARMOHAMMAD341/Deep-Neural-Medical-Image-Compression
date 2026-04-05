@@ -6,19 +6,19 @@ def connect_db():
         db = mysql.connector.connect(
             host="localhost",
             user="root",
-            password="UMARCSE#3",   # 🔴 change this
+            password="UMARCSE#3",
             database="lung_app"
         )
         return db
     except mysql.connector.Error as err:
-        print(f"Database Connection Error: {err}")
+        print(f"❌ Database Connection Error: {err}")
         return None
 
 
-# 💾 Save prediction result
-def save_result(filename, result, confidence):
+# 💾 Save prediction result (WITH USER)
+def save_result(username, filename, result, confidence):
     db = connect_db()
-    
+
     if db is None:
         print("❌ Database connection failed")
         return
@@ -27,11 +27,11 @@ def save_result(filename, result, confidence):
         cursor = db.cursor()
 
         query = """
-        INSERT INTO results (filename, result, confidence)
-        VALUES (%s, %s, %s)
+        INSERT INTO results (username, filename, result, confidence)
+        VALUES (%s, %s, %s, %s)
         """
 
-        values = (filename, result, float(confidence))
+        values = (username, filename, result, float(confidence))
 
         cursor.execute(query, values)
         db.commit()
@@ -42,19 +42,23 @@ def save_result(filename, result, confidence):
         print(f"❌ Error saving data: {err}")
 
     finally:
+        cursor.close()
         db.close()
 
 
-# 📊 Fetch all records (optional - for history)
-def get_results():
+# 📊 Fetch user-specific records
+def get_results(username):
     db = connect_db()
-    
+
     if db is None:
         return []
 
     try:
         cursor = db.cursor()
-        cursor.execute("SELECT * FROM results ORDER BY created_at DESC")
+
+        query = "SELECT * FROM results WHERE username=%s ORDER BY created_at DESC"
+        cursor.execute(query, (username,))
+
         data = cursor.fetchall()
         return data
 
@@ -63,4 +67,5 @@ def get_results():
         return []
 
     finally:
+        cursor.close()
         db.close()

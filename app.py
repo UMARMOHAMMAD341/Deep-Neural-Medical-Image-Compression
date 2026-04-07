@@ -1,7 +1,10 @@
 import streamlit as st
 from PIL import Image
 import numpy as np
-import tensorflow as tf
+try:
+    import tensorflow as tf
+except:
+    tf = None
 from db import save_result, get_results
 
 # ✅ MUST BE FIRST STREAMLIT COMMAND
@@ -45,10 +48,11 @@ st.write("Upload a CT scan image to detect lung cancer.")
 # Load model
 @st.cache_resource
 def load_model():
+    if tf is None:
+        return None
     try:
         return tf.keras.models.load_model("model.h5")
-    except Exception as e:
-        st.error(f"❌ Error loading model: {e}")
+    except:
         return None
 
 model = load_model()
@@ -62,7 +66,7 @@ if file is not None:
 
     if st.button("🔍 Predict"):
         if model is None:
-            st.error("Model not loaded.")
+            st.warning("⚠️ Model not available in deployed version")
         else:
             try:
                 img = image.resize((224, 224))
